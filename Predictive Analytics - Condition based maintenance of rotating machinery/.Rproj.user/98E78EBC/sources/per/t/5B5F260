@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572534260867.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "617424556",
+    "id" : "5B5F260",
+    "lastKnownWriteTime" : 1571925222,
+    "last_content_update" : 1571925222,
+    "path" : "~/Projects/CBM/CBM/cbm.R",
+    "project_path" : "cbm.R",
+    "properties" : {
+        "cursorPosition" : "17,39",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

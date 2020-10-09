@@ -1,0 +1,58 @@
+
+# Raw data imported from local machine#
+# checking obesrvations ~
+View(data)
+summary (data)
+nrow(data)
+ncol(data)
+dim(data)
+str(data)
+
+
+#Colanames replace and checking null/na obeservations)#
+
+cbm<-data.frame(data)
+sum(is.na(cbm))
+sum(is.null(cbm))
+
+colnames(cbm)<-c("Lever position (lp)",
+                "Ship speed (v) [knots]",
+                "Gas Turbine (GT) shaft torque (GTT) [kN m]",
+                "GT rate of revolutions (GTn) [rpm]",
+                "Gas Generator rate of revolutions (GGn) [rpm]",
+                "Starboard Propeller Torque (Ts) [kN]",
+                "Port Propeller Torque (Tp) [kN]",
+                "Hight Pressure (HP) Turbine exit temperature (T48) [C]",
+                "GT Compressor inlet air temperature (T1) [C]",
+                "GT Compressor outlet air temperature (T2) [C]",
+                "HP Turbine exit pressure (P48) [bar]",
+                "GT Compressor inlet air pressure (P1) [bar]",
+                "GT Compressor outlet air pressure (P2) [bar]",
+                "GT exhaust gas pressure (Pexh) [bar]",
+                "Turbine Injecton Control (TIC) [%]",
+                "Fuel flow (mf) [kg/s]",
+                 "GT Compressor decay state coefficient",
+                 "GT Turbine decay state coefficient")
+
+# Scaling the data#
+View(cbm)
+head(cbm,10)
+cbm[,12]
+hist(cbm[,12],density = F,freq = F,)
+
+#EDA#
+write.csv(cbm,"cbm.csv")
+library(corrplot)
+install.packages("corrplot")
+cbmcorplot<-cor(cbm)
+corrplot(cbmcorplot,method = "circle")
+
+
+
+
+
+
+
+
+
+

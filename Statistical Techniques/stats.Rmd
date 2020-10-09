@@ -1,0 +1,412 @@
+---
+title: "Statistical Technique Assignment"
+author: "Kartheek Raj"
+date: "1/7/2020"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Abstract 
+
+This report contains the methods used to extract insights from Fuel Consumption data set. Multiple analytical tests are performed in order to find any relations between features and investigate the car models and features causing the CO2 emission.Statistical tests like – Pearson Correlation,ANOVA, Wilcoxon signed rank test, Bartlett Test, etc. are performed on the mentioned set of data.
+
+
+## Introduction
+
+Automobiles are ubiquitous in our daily lives as means of transportation from point A to point B. Cars we know today has wide variety options and has come so far from early bare bone versions. Ford motor made the milestone by their 1908 model from the inception to reality cars accessible to the masses. Cars presence exploded every aspect in this century from pizza delivery to personal transportation. Automobiles not only comes with fiction but also with pollution like CO2 emission, infrastructure like roads and Natural resources like metals (CNBC, 2020). After 2008 financial crisis, as economy recovered consumers preferred less mileage and larger car segment i.e. sports utility vehicle (SUV). In other words, SUV CO2 emissions are higher than less mileage cars (Stevens, 2020). SUV carbon foot print is 544 metric tons from 2010 to 2018 which is directly contributing to global warming. In this report we investigate features impacting CO2 emissions using Fuel Consumption Data set.
+
+## Description of Fuel Consumption Data set.
+
+Data set used to perform analysis is collected from  Kaggle at this link [Datalink](https://www.kaggle.com/sarita19/fuel-consumption).This data set is about cars in the year of 2014 with 13 features and 1609 records.
+
+### Features Description as follows:
+
+**Year**: This feature is about the year the data collected i.e. 2014.  
+
+**Make**: This feature is about the name of the car manufacturers and contains 39 makers.  
+
+**Model**: This feature is about the name of the car model and contains 663 models.  
+
+**Vehicle Class**: This feature is about the name of the car vehicle type and contains 16 types.  
+
+**Engine Size**: This feature is about the size of the engine in litters and contains 45 engine sizes.  
+
+**Cylinders**: This feature is about the no of cylinders in the engine and contains 7 unique cylinder setups.  
+
+**Transmission**: This feature is about the name of the car transmission type and contains 22 different types.  
+
+**Fuel Type**: This feature is about the fuel types consumed by all cars and contains 4 fuel types.  
+
+**Fuel Consumption city**: This feature is about the mileage of the car in city conditions and range from 4.6 to 30.2.  
+
+**Fuel Consumption Highway**: This feature is about the mileage of the car in highway conditions and the range from 4.9 to 20.5.  
+
+**Fuel Consumption Combined**: This feature is about the mileage of the both previous conditions combined and the range from 4.7 to 25.8.  
+
+**Fuel Consumption mile per gallon**: This feature is about the car can travel no of miles per gallon and the range from 11 to 60.  
+
+
+## Project Aims and Objective
+
+This project will be carried out by answering following questions. We will apply statistical techniques in order to get the insights from automobile data set collected from 2014.
+
+### Objective:
+
+
+What are the most contributing factors that leads to CO2 emission? 
+
+How the fuel mileage varies across SUV Vehicle class models?  
+ 
+Car Makers and their impact in the year 2014.  
+
+ANOVA, Bartlett Test and Non parametric test method to check if the differences between the groups are statistically significant.  
+
+Pearson’s R correlation can be used to see the strength of association between quantitative variables.  
+
+
+  
+
+
+
+### Code and its explanation
+
+
+**Setting working directory.  **
+
+```{r setwd}
+require(ggplot2)
+require(GGally)
+require(corrplot)
+library(ggplot2)
+library(GGally)
+
+getwd()
+Fuel_Consumption<-read.csv("FuelConsumption.csv")
+Fuel_Consumption<-data.frame(Fuel_Consumption)
+
+```
+
+We imported the data from local machine to r platform and renamed the data set to Fuel_Consumption.Next, we look for these observations:
+
+The information regarding the data types present in the data, number of records and features.Have pulled the first 10 records just to see the data frame and last numerical summary like mean, median and the count on unique observations.
+
+```{r data summary}
+
+dim(Fuel_Consumption)
+
+str(Fuel_Consumption)
+
+head(Fuel_Consumption)
+
+summary(Fuel_Consumption)
+
+```
+
+## Exploratory data analysis
+
+**Checking the null and NA values and distribution of numerical features. As different manufactures and models varies on engine size and no of cylinders, its evident that some outliers are present. Cars comes with variety of sizes and specifications,we will refrain from handling outliers for the same reason and histograms plots reflects normally distributed data.Few features shows relation between them as shown pairs plot.**
+
+
+```{r pairs}
+par(mfrow=c(1,1),bg="lightyellow")
+pairs(Fuel_Consumption[,c(-3,-1)],panel = panel.smooth,gap=1/4)
+```
+
+
+### Box plots 
+
+```{r null and na values}
+par(mfrow=c(1,1),bg="lightyellow")
+
+sum(is.na(Fuel_Consumption))
+sum(is.null(Fuel_Consumption))
+
+boxplot(Fuel_Consumption$FUELCONSUMPTION_COMB)
+boxplot(Fuel_Consumption$FUELCONSUMPTION_CITY)
+boxplot(Fuel_Consumption$FUELCONSUMPTION_HWY)
+boxplot(Fuel_Consumption$CO2EMISSIONS)
+boxplot(Fuel_Consumption$FUELCONSUMPTION_COMB_MPG)
+
+```
+
+### Histograms
+
+```{r histograms}
+par(mfrow=c(1,1),bg="lightyellow")
+hist(Fuel_Consumption$FUELCONSUMPTION_COMB)
+hist(Fuel_Consumption$FUELCONSUMPTION_CITY)
+hist(Fuel_Consumption$FUELCONSUMPTION_HWY)
+hist(Fuel_Consumption$CO2EMISSIONS)
+hist(Fuel_Consumption$FUELCONSUMPTION_COMB_MPG)
+
+```
+
+
+
+
+
+**Altering the data types for our problem.**
+
+```{r datatypes manipulation}
+
+Fuel_Consumption$CYLINDERS<-as.factor(Fuel_Consumption$CYLINDERS)
+Fuel_Consumption$ENGINESIZE<-as.factor(Fuel_Consumption$ENGINESIZE)
+Fuel_Consumption$MODELYEAR<-as.factor(Fuel_Consumption$MODELYEAR)
+
+str(Fuel_Consumption)
+
+```
+
+**Data splits includes train/test and numeric and non numeric features.**
+
+```{r datasplit}
+
+set.seed(1234)
+
+ids = sample(nrow(Fuel_Consumption), nrow(Fuel_Consumption)*0.6)
+train<-data.frame(Fuel_Consumption[ids,])
+test<-data.frame(Fuel_Consumption[-ids,])
+
+num_data<-Fuel_Consumption[,c(9:13)]
+factorial_data<-Fuel_Consumption[,-c(9:13)]
+
+```
+
+### Correlation
+
+we apply Pearson correlation, assuming that features are normally distributed for linearity established between the numerical features. Correlation coefficient above 0 is positive and below 0 is negative. If the correlation coefficients are 1, -1,then they are perfectly correlated with each other and zero means no correlation is established. Correlation coefficient is mathematically defined as (James et al., n.d.).
+
+$$r = \frac{{}\sum_{i=1}^{n} (x_i - \overline{x})(y_i - \overline{y})}
+{\sqrt{\sum_{i=1}^{n} (x_i - \overline{x})^2(y_i - \overline{y})^2}}$$
+
+
+
+**Correlation test on numerical Features found fuel consumption is negatively correlated to highway, city and combined mileage. highway, city and combined reflects positive correlation.Building the Linear model we will consider only combined mileage for the same reason**
+
+
+```{r correlation}
+
+library(corrplot)
+
+Fuel_Consumption_cor<-cor(num_data)
+Fuel_Consumption_cor
+
+corrplot(Fuel_Consumption_cor,method = "pie",type="lower")
+
+
+```
+
+
+### Bar chart
+
+Bar chart is a visualization of categorical data against aggregate function. Each bar shows the aggregate of that category (Docs.tibco.com, 2020).
+
+**Bar plots on Fuel consumption data set convey the following results. First inference is Ford produces more cars than other manufacturer. Secondly, mid size models are positioned as largest vehicle type and last inference is 2liter engine and fuel type x follows the same highest distribution.**
+
+```{r dataplots}
+par(mfrow=c(1,1),bg="lightyellow")
+library(ggplot2)
+ggplot(Fuel_Consumption,aes(Fuel_Consumption$ENGINESIZE))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(Fuel_Consumption,aes(Fuel_Consumption$VEHICLECLASS))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(Fuel_Consumption,aes(Fuel_Consumption$TRANSMISSION))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(Fuel_Consumption,aes(Fuel_Consumption$FUELTYPE))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(Fuel_Consumption,aes(Fuel_Consumption$MAKE))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+## Data slicing
+
+Data slicing is a method to filter and extract exact observations from the large data set according to the requirement. SUV Vehicles class is our requirement (Phillips, 2020).
+
+**We are slicing the data from fuel consumption data to generate only SUV segment data. After implementing EDA, we found that maker JEEP produced more SUVs than any other and Popular engine size in this vehicle class 2.4liter and followed by 2liter.**
+
+```{r suv}
+
+library(ggplot2) 
+
+suv<-Fuel_Consumption[Fuel_Consumption$VEHICLECLASS=="SUV - SMALL"|Fuel_Consumption$VEHICLECLASS=="SUV - STANDARD",]
+head(suv)        
+
+ggplot(suv,aes(x=suv$MAKE))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+ggplot(suv,aes(x=suv$ENGINESIZE))+geom_bar(fill="steelblue")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+```
+
+
+## ANOVA
+
+t-test is widely used to compare two individual samples. It cannot handle more than two samples. So, in order to handle more than 2 samples we use ANOVA which assumes that samples are taken from populations with the same variance, and variables should be independent and normally distributed. The NULL hypothesis here is the fuel consumption combined of all SUV makers are having the same mean while the ALTERNATIVE hypothesis is means are not same (Statisticallysignificantconsulting.com, 2020).
+
+**Applying anova on combined mileage against different SUV Makers and found that to reject null hypothesis citing the p-value.**
+
+```{r anova suvmake vs combmilage}
+
+suv.aov<-aov(FUELCONSUMPTION_COMB~MAKE,data=suv)
+summary(suv.aov)
+plot(suv.aov,cex=1)
+plot(suv$FUELCONSUMPTION_COMB~suv$MAKE,data=suv,col=1:30)
+
+```
+
+
+**Applying anova on combined mileage against different SUV Makers and found that to reject null hypothesis citing the p-value.**
+
+```{r anova suvmake vs highywaymilage}
+
+suv.aov_highway<-aov(FUELCONSUMPTION_HWY~MAKE,data=suv)
+summary(suv.aov_highway)
+plot(suv.aov_highway,cex=1)
+plot(suv$FUELCONSUMPTION_HWY~suv$MAKE,data=suv,col=1:30)
+
+```
+
+**Applying anova on combined mileage against different SUV Makers and found that to reject null hypothesis citing the p-value.**
+
+```{r anova suvmake vs citymilage}
+
+suv.aov_city<-aov(FUELCONSUMPTION_CITY~MAKE,data=suv)
+summary(suv.aov_city)
+plot(suv.aov_city,cex=1)
+plot(suv$FUELCONSUMPTION_CITY~suv$MAKE,data=suv,col=1:30)
+
+```
+
+**Applying anova on combined mileage against different SUV Makers and found that to reject null hypothesis citing the p-value.**
+
+```{r anova suvmodel vs combmilage}
+
+suv.aov_model<-aov(FUELCONSUMPTION_COMB~MODEL,data=suv)
+summary(suv.aov_model)
+plot(suv.aov,cex=1)
+ggplot(suv,aes(x=suv$MODEL,y=suv$FUELCONSUMPTION_COMB))+geom_boxplot(fill="steelblue")+ theme(text = element_text(size=4) ,axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+**Applying anova on combined mileage against different SUV Makers and found that to reject null hypothesis citing the p-value.**
+
+```{r anova suvmodel vs milespergalon}
+
+suv.aov_mpg<-aov(FUELCONSUMPTION_COMB_MPG~MAKE,data=suv)
+summary(suv.aov_mpg)
+plot(suv.aov_mpg,cex=1)
+plot(suv$FUELCONSUMPTION_COMB_MPG~suv$MAKE,data=suv,col=1:30)
+
+
+
+```
+
+
+## Bartlett Test
+
+Unlike ANOVA test where it assumes that variances are equal across groups or samples. Bartlett test can be used for k samples and for all. Below equations, si2 is the variance of the ith group, N is the total sample size, Ni is the sample size of the ith group, k is the number of groups, and sp2 is the pooled variance. The pooled variance is a weighted average of the group variances (Itl.nist.gov, 2020). NULL hypothesis that different fuel consumption vs different car makes variances are equal, ALTERNATIVE is at least two car makes unequal.
+
+$$s^{2}_{p} = \sum_{i=1}^{k}(N_{i} - 1)s^{2}_{i}/(N-k)$$
+
+
+
+$$T = \frac{(N-k) \ln{s^{2}_{p}} - \sum_{i=1}^{k}(N_{i} - 1)\ln{s^{2}_{i}}}{1 + (1/(3(k-1)))((\sum_{i=1}^{k}{1/(N_{i} - 1))} - 1/(N-k))}$$
+
+**Bartlett Test for equal variances different mileage setups against different SUV Makers and found that to reject null hypothesis citing the p-values.**
+
+```{r bartlett test}
+
+
+bartlett.test(suv$FUELCONSUMPTION_COMB_MPG~suv$MAKE)
+bartlett.test(suv$FUELCONSUMPTION_CITY~suv$MAKE)
+bartlett.test(suv$FUELCONSUMPTION_HWY~suv$MAKE)
+bartlett.test(suv$FUELCONSUMPTION_COMB~suv$MAKE) 
+
+```
+
+
+
+## Non parametric test - Wilcoxon signed rank test
+
+unlike parametric tests, On-parametric tests do not make assumptions about the underlying distribution of the data and can be applied to a wider range of situations. Last previous parametric testing on means and variance with corresponding assumptions, we rejected null hypothesis citing p values with 95 % confidence interval. Now, we will perform Wilcoxon signal rank test with 99% confidence interval and null hypotheses is different mileage setups shares equal medians.
+
+**Citing the P values we reject the null hypothesis.**
+
+
+```{r nonparamteric test}
+
+wilcox.test(suv$FUELCONSUMPTION_CITY,suv$FUELCONSUMPTION_HWY,conf.int=0.99,mu=0)
+
+wilcox.test(suv$FUELCONSUMPTION_CITY,suv$FUELCONSUMPTION_COMB,conf.int=0.99,mu=0)
+
+wilcox.test(suv$FUELCONSUMPTION_HWY,suv$FUELCONSUMPTION_COMB,conf.int=0.99,mu=0)
+
+```
+
+## Linear Regression
+
+Applying Linear regression on SUV data set to find out the features impact the co2 emissions. 
+
+```{r lm model1}
+suv_lm<-lm(CO2EMISSIONS~FUELCONSUMPTION_COMB_MPG+FUELCONSUMPTION_COMB+MODEL+MAKE+ENGINESIZE+CYLINDERS+ENGINESIZE+TRANSMISSION,data = suv)
+summary(suv_lm)
+```
+
+
+The **best features** can explain the **CO2 emissions** i.e target variable follows list and found that these this **car models** have greater impact than any other features.
+
+
+```{r Feature Importance}
+suv_coef<-which(sort(suv_lm$coefficients<0.5,decreasing = F))
+suv_coef
+
+
+```
+
+Applying Linear regression on Fuel Consumption train data set to find out the features impact the co2 emissions. 
+
+```{r lm model2}
+FC_lm<-lm(CO2EMISSIONS~FUELCONSUMPTION_COMB_MPG+FUELCONSUMPTION_COMB+MODEL+MAKE+ENGINESIZE+CYLINDERS+ENGINESIZE+TRANSMISSION,data = Fuel_Consumption)
+FC_coef<-which(sort(FC_lm$coefficients<0.5,decreasing = F))
+
+str(FC_coef)
+head(FC_coef,20)
+
+non_suvfactors<-setdiff(FC_coef,suv_coef)
+length(non_suvfactors)
+length(FC_coef)
+length(suv_coef)
+
+
+```
+
+
+
+## Summary
+
+Following the statistical tests made from this project regarding fuel consumption car data set we found the groups i.e. car Makers, car Models , mileage are not similar to each other. However, we grouped Sports Utility Vehicle (SUV) class in order to find the car models which are causing significant CO2 Emissions.The total cars that contributed to CO2 emissions are 474 out of 663 car models which gives the statistics of 116 SUV models holds the lion share. SUV vehicle class is causing more CO2 emissions than any other vehicle segments.  
+
+
+
+## References
+
+CNBC. (2020). [image] Available at: https://www.youtube.com/watch?v=v8RVob4yzxs [Accessed 16 Jan. 2020].
+
+Docs.tibco.com. (2020). What is a Bar Chart?. [online] Available at: https://docs.tibco.com/pub/spotfire/7.0.1/doc/html/bar/bar_what_is_a_bar_chart.htm [Accessed 12 Jan. 2020].
+
+Itl.nist.gov. (2020). 1.3.5.7. Bartlett's Test. [online] Available at: https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm [Accessed 13 Jan. 2020].
+
+James, G., Witten, D., Hastie, T. and Tibshirani, R. (n.d.). An introduction to statistical learning. p.71.
+
+Phillips, N. (2020). YaRrr! The Pirate’s Guide to R. [online] Bookdown.org. Available at: https://bookdown.org/ndphillips/YaRrr/slicing-dataframes.html [Accessed 12 Jan. 2020].
+
+Statisticallysignificantconsulting.com. (2020). ANOVA | Statistically Significant Consulting. [online] Available at: https://www.statisticallysignificantconsulting.com/Anova.htm [Accessed 12 Jan. 2020].
+
+Stevens, P. (2020). Surging SUV demand is canceling out the environmental benefit from electric cars. [online] CNBC. Available at: https://www.cnbc.com/2019/10/17/surging-suv-demand-is-canceling-out-the-environmental-benefit-from-electric-cars.html [Accessed 16 Jan. 2020].
+

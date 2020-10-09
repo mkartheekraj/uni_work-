@@ -1,0 +1,502 @@
+---
+title: "CBM 122020"
+author: "Kartheek Raj"
+date: "1/2/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem : Find the features impacting target variable i.e GT_Turbine_decay_state_coefficient and the best model yields better root mean square error.
+
+
+Setting working directory
+```{r working directory}
+
+getwd()
+setwd("C:/Users/mkart/OneDrive/Documents/Projects/ProcessingBigData/CBM/CBM")
+
+```
+ 
+Data pulling from local machine for analysis.
+
+```{r data} 
+
+data <-read.delim("data.txt", header = FALSE, sep = "", quote = "\"",
+           dec = ".", fill = F,stringsAsFactors= T)
+cbm<-data.frame(data)
+
+```
+
+Checking first 10 rows 
+
+```{r head}
+
+head(cbm,10)
+
+```
+
+
+
+coloumn names not defined as required, assing coloumn names as inteded.
+
+
+```{r coloumn names}
+colnames(cbm)<-c("Lever position (lp)",
+                "Ship speed (v) [knots]",
+                "Gas Turbine (GT) shaft torque (GTT) [kN m]",
+                "GT rate of revolutions (GTn) [rpm]",
+                "Gas Generator rate of revolutions (GGn) [rpm]",
+                "Starboard Propeller Torque (Ts) [kN]",
+                "Port Propeller Torque (Tp) [kN]",
+                "Hight Pressure (HP) Turbine exit temperature (T48) [C]",
+                "GT Compressor inlet air temperature (T1) [C]",
+                "GT Compressor outlet air temperature (T2) [C]",
+                "HP Turbine exit pressure (P48) [bar]",
+                "GT Compressor inlet air pressure (P1) [bar]",
+                "GT Compressor outlet air pressure (P2) [bar]",
+                "GT exhaust gas pressure (Pexh) [bar]",
+                "Turbine Injecton Control (TIC) [%]",
+                "Fuel flow (mf) [kg/s]",
+                 "GT Compressor decay state coefficient",
+                 "GT_Turbine_decay_state_coefficient")
+```
+
+
+checking last 10 rows
+
+```{r tail}
+tail(cbm,10)
+```
+
+checking the data types in cbm data.we found all features numeric data type.
+
+```{r datatypes}
+str(cbm)
+```
+
+checking the quantity of features and variables in cbm data.
+
+```{r dim}
+dim(cbm)
+```
+
+numerical summary of the cbm dataset loike mean,median and mode.
+
+```{r summary}
+summary(cbm)
+```
+
+Checking for missing values.Found no missing values in the data.
+
+```{r missing values}
+sum(is.na(cbm))
+```
+
+Checking for null values.Found no missing values in the data.
+
+```{r nullvalues}
+sum(is.null(cbm))
+```
+
+checking **correlation** between feautures.
+
+```{r correlation}
+par(mfrow=c(1,1),bg="lightyellow")
+library(corrplot)
+cbmcorplot<-cor(cbm)
+corrplot(cbmcorplot,method = "circle",type="lower")
+```
+
+**Insight 1** : GT Compressor inlet air temprature and  GT compressor inlet air pressure after plot corrplot its need inspection. Rest all are shows postive corelation to each other.we found data is refelcting multicolinearity but we proceed to regression models.
+
+
+
+```{r varinace}
+
+var(cbm$`GT Compressor inlet air temperature (T1) [C]`)
+var(cbm$`GT Compressor inlet air pressure (P1) [bar]`)
+sum(cbm$`Starboard Propeller Torque (Ts) [kN]`-cbm$`Port Propeller Torque (Tp) [kN]`)
+
+
+```
+
+**Insight 2** : As variance is zero we will remove those features from the dataset.
+
+##  Exploiry data analysis
+
+You can also embed plots, for example:
+
+```{r boxplots}
+par(mfrow=c(1,1),bg="lightyellow")
+boxplot(cbm$`Lever position (lp)`)
+boxplot(cbm$`Ship speed (v) [knots]`)
+boxplot(cbm$`Gas Turbine (GT) shaft torque (GTT) [kN m]`)
+boxplot(cbm$`GT rate of revolutions (GTn) [rpm]`)
+boxplot(cbm$`Gas Generator rate of revolutions (GGn) [rpm]`)
+boxplot(cbm$`Starboard Propeller Torque (Ts) [kN]`)
+boxplot(cbm$`Port Propeller Torque (Tp) [kN]`)
+boxplot(cbm$`Hight Pressure (HP) Turbine exit temperature (T48) [C]`)
+boxplot(cbm$`GT Compressor inlet air temperature (T1) [C]`)
+boxplot(cbm$`GT Compressor outlet air temperature (T2) [C]`)
+boxplot(cbm$`HP Turbine exit pressure (P48) [bar]`)
+boxplot(cbm$`GT Compressor inlet air pressure (P1) [bar]`)
+boxplot(cbm$`GT Compressor outlet air pressure (P2) [bar]`)
+boxplot(cbm$`GT exhaust gas pressure (Pexh) [bar]`)
+boxplot(cbm$`Turbine Injecton Control (TIC) [%]`)
+boxplot(cbm$`Fuel flow (mf) [kg/s]`)
+boxplot(cbm$`GT Compressor decay state coefficient`)
+boxplot(cbm$`GT_Turbine_decay_state_coefficient`)
+```
+
+**Insight 3**: Tutbine injection control (TIC) is the feature has 188 outliers out of 11934 records is small.Even very small quantity still we handle outliers replacing by by upper whisker. 
+
+
+
+Handling outliers in the TIC feauture 
+
+```{r outlierhandling}
+par(mfrow=c(1,1),bg="lightyellow")
+#Function for replace outliers
+replace_outliers = function(x,na.rm= TRUE){
+
+qnt = quantile(x, probs = c(.25,.75))
+outlier = 1.5*IQR(x)
+x[x < (qnt[1]-outlier) ] <- qnt[1]
+x[x > (qnt[2]+outlier) ] <- qnt[2]
+return(x) 
+}
+cbm$`Turbine Injecton Control (TIC) [%]`<-replace_outliers(cbm$`Turbine Injecton Control (TIC) [%]`)
+boxplot(cbm$`Turbine Injecton Control (TIC) [%]`)
+
+
+```
+
+plotting **histogram** feautures.
+
+
+```{r histograms}
+par(mfrow=c(3,3),bg="lightyellow")
+for (i in 1:ncol(cbm)) {
+  d<-density(cbm[,i])
+  plot(d)
+  
+}
+
+```
+
+Removing the features as found insight 2 
+
+```{r cbm removing}
+
+cbmu<-cbm[,-c(7,9,12,17)]
+colnames(cbmu)
+```
+
+performing **train and test data split**.
+
+```{r train and test}
+
+set.seed(1234)
+ids = sample(nrow(cbmu), nrow(cbmu)*0.6)
+train<-data.frame(cbmu[ids,])
+test<-data.frame(cbmu[-ids,])
+
+```
+
+**z score Scaling** the data.
+
+```{r z_scale}
+
+train_withou_Y<-train[,-c(14)]
+test_withou_Y<-test[,-c(14)]
+
+train_zscale<-data.frame(scale(train_withou_Y))
+test_zscale<-data.frame(scale(test_withou_Y))
+head(train_zscale)
+head(test_zscale)
+
+```
+
+performing **minmax scaling** on the dataset
+```{r minmax scaling}
+
+minmax<-function(x){
+  return((x-min(x))/max(x)-min(x))
+}
+
+train_minmax<-data.frame(minmax(train_withou_Y))
+test_minmax<-data.frame(minmax(test_withou_Y))
+
+```
+
+## Linear regression 
+
+Fitting linear regression models to both train data sets 
+
+```{r linearmodelsontrain}
+
+Y_train<-train$GT_Turbine_decay_state_coefficient
+Y_test<-test$GT_Turbine_decay_state_coefficient
+
+train_zscale_withY<-cbind(train_zscale[,],Y_train)
+train_minmax_withY<-cbind(train_minmax[,],Y_train)
+
+test_zscale_withY<-cbind(test_zscale[,],Y_test)
+test_minmax_withY<-cbind(test_minmax[,],Y_test)
+
+
+lmode_z<-lm (Y_train~.,data=train_zscale_withY)
+lmode_minmax<-lm (Y_train~.,data=train_minmax_withY)
+summary(lmode_z)
+summary(lmode_minmax)
+
+lmode_z$coefficients
+
+
+```
+
+
+
+**predicting** on **test data** using previous models.
+
+```{r predictions1}
+
+lmode_z_predictions<-predict(lmode_z, newdata=test_zscale_withY)
+lmode_minmax_predictions<-predict(lmode_minmax, newdata=test_minmax_withY)
+
+```
+
+
+**Root mean square error function**
+```{r rmse}
+
+rmse<-function(x){
+  
+testerror<- (Y_test-x)
+testerror_sq <- testerror ** 2
+rmse<-sqrt(mean(testerror_sq))
+rmse
+
+}
+
+rmse(lmode_z_predictions)
+rmse(lmode_minmax_predictions)
+```
+
+
+we can clearly evident r-square value is 0.90 but the **feature significance** post **close values**.To handel this we **perform ridge regeressoion as handels multicolinearity**.
+
+## Ridge regression
+
+```{r ridge regression}
+par(mfrow=c(1,1),bg="lightyellow")
+
+require(glmnet)
+library(glmnet)
+
+x_reg<-data.matrix(train_withou_Y)
+y_reg<-Y_train
+lambda_seq <- 10^seq(2, -2, by = -.1)
+
+ridge_model <- glmnet(x_reg, y_reg, alpha = 0, lambda  = lambda_seq,standardize = FALSE)
+summary(ridge_model)
+
+plot(ridge_model, xvar = "lambda")
+legend("bottomright", lwd = 1, col = 1:6, legend = colnames(x_reg), cex = .45)
+
+
+```
+
+Finding the **optimal lambda**
+
+```{r bestoptimalvalue}
+par(mfrow=c(1,1),bg="lightyellow")
+
+lambdas_to_try <- 10^seq(-3, 3, length.out = 50)
+ridge_cv <- cv.glmnet(x_reg, y_reg, alpha = 0,lambda = lambdas_to_try ,nfolds = 100)
+best_lambda<-ridge_cv$lambda.min
+best_lambda
+plot(ridge_cv)
+
+
+```
+
+Final ridge regression model with optimal lambda value
+
+```{r finalridgeregression model}
+
+x_reg<-data.matrix(train_withou_Y)
+y_reg<-Y_train
+lambda_seq <- 10^seq(2, -2, by = -.1)
+
+final_ridge_model <- glmnet(x_reg, y_reg, alpha = 0, lambda  = best_lambda ,standardize = FALSE)
+coef(final_ridge_model)
+
+```
+
+**Insight3** : Rmse value improved slightly and best TIC,Fuel FLow ,GG rate,GT compressor temp and GT shaft. Top3 features follows GT compressor temp,GG rate,TIC 
+
+```{r predictions}
+
+y_predicted <- predict(final_ridge_model , s = best_lambda, newx = data.matrix(test_withou_Y))
+
+rmse(y_predicted)
+
+```
+
+#Lasso Regression
+
+next we will perform lasso regression.
+
+```{r lasso regression}
+par(mfrow=c(1,1),bg="lightyellow")
+require(glmnet)
+library(glmnet)
+
+x_reg<-data.matrix(train_withou_Y)
+y_reg<-Y_train
+lambda_seq <- 10^seq(1, -3, by = -.1)
+
+lasso_model <- glmnet(x_reg, y_reg, alpha = 1, lambda  = lambda_seq,standardize = FALSE)
+summary(lasso_model)
+
+
+plot(lasso_model, xvar = "lambda")
+legend("bottomright", lwd = 1, col = 1:6, legend = colnames(x_reg), cex = .45)
+
+
+```
+
+Finding the **optimal lambda** for **losso regression** using **cross validation.**
+
+```{r bestoptimalvalue_lasso}
+par(mfrow=c(1,1),bg="lightyellow")
+set.seed(12345)
+
+lambdas_to_try <- 10^seq(-6, 1, length.out = 50)
+lasso_cv <- cv.glmnet(x_reg, y_reg, alpha = 1,lambda = lambdas_to_try ,nfolds = 100)
+best_lambda_lasso<-ridge_cv$lambda.min
+best_lambda_lasso
+plot(lasso_cv )
+
+
+```
+
+
+Final lasoo regression model with optimal lambda value
+
+
+```{r final losso model}
+set.seed(12345)
+
+x_reg<-data.matrix(train_withou_Y)
+y_reg<-Y_train
+
+final_lasso_model <- glmnet(x_reg, y_reg, alpha = 1, lambda  = best_lambda_lasso ,standardize = FALSE)
+coef(final_lasso_model)
+
+```
+
+**Insight4** : Rmse improved very littel and the features significance as follows GG rate,GT shaft torque,GT compressor T2
+
+```{r predictions_lasso}
+set.seed(12345)
+
+y_predicted_lasso <- predict(final_lasso_model , s = best_lambda_lasso, newx = data.matrix(test_withou_Y))
+
+rmse(y_predicted_lasso)
+
+```
+
+## Random Forest
+
+we will perform ensemble methods on the same dataset.
+
+```{r random forest}
+set.seed(12345)
+require(randomForest)
+library(randomForest)
+
+rftree<-randomForest(GT_Turbine_decay_state_coefficient~.,data=train,mtry=10,ntree=100,importance=T)
+rftree$importance
+
+
+```
+
+Finding best mtry and ntree for the random forest regressor.
+
+```{r best mtry and ntree}
+set.seed(12345)
+
+ rmse_updated<-function(x) {
+  h=x
+  predictvalues<-predict(h,newdata=test)
+  mean((predictvalues-test$GT_Turbine_decay_state_coefficient)^2)
+}
+
+ mtrail<- function(x){
+h=x
+carrftree<-randomForest(GT_Turbine_decay_state_coefficient~.,data=train,mtry=h,importance=T)
+ rmse_updated(carrftree)
+
+ }
+ 
+ for (i in 1:10){
+  mtrail(i)
+  print(mtrail(i))
+  
+ }
+ 
+
+ ntree<- function(x){
+h=x
+carrftree<-randomForest(GT_Turbine_decay_state_coefficient~.,data=train,mtry=3,ntree=h,importance=T)
+ rmse_updated(carrftree)
+
+ } 
+
+
+ for (i in 1:10){
+  ntree(i)
+  print(ntree(i))
+  
+ }
+ 
+
+```
+
+
+final random tree
+
+```{r final rftree}
+set.seed(12345)
+final_rftree<-randomForest(GT_Turbine_decay_state_coefficient~.,data=train,mtry=3,ntree=4,importance=T)
+rmse_updated(final_rftree)
+
+```
+
+**Insight5** :  Rmse lowered and the top 3 features significance as follows GG rate,GT rate,GT compressor T2
+
+## Extra Tree regression 
+
+
+```{r extraregression}
+options(java.parameters = "-Xmx4g")
+require(extraTrees)
+library(extraTrees)
+et <- extraTrees(data.matrix(train_withou_Y), Y_train, nodesize=3, mtry=3, numRandomCuts=3)
+
+yhat <- predict(et, data.matrix(test_withou_Y))
+rmse(yhat)
+
+```
+
+
+**Final Insight** : Random forest is the best models yields low Root mean squared error and the  best features are subjected to  models but accross the GGrate ,GT compressor T2. Lasso model is better at elimanation of features and poised GGrate ,GT compressor T2 and GT rate.
+
+
