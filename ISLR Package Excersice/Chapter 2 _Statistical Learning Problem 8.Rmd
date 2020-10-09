@@ -1,0 +1,227 @@
+---
+title: 'Chapter 2: Statistical Learning-Problems: 8'
+author: "Kartheek Raj"
+date: "12/20/2019"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+## Problem 8 
+
+packages required to excute code :ggplot
+
+### (a) Use the read.csv() function to read the data set set into R. Call the loaded data set set College. Make sure that you have the directory set to the correct location for the data set. 
+
+**Answer**
+
+
+
+Reading the csv file using **read.csv** command
+```{r College1}
+require(ggplot2)
+library(ggplot2)
+College<-read.csv("College.csv")
+```
+
+First 10 records in College data set 
+
+```{r College2}
+head(College,10)
+```
+
+### (b)Look at the data set using the fix() function. You should notice that the ﬁrst column is just the name of each university. We don’t really want R to treat this as data set. However, it may be handy to have these names for later.
+
+**Answer**
+
+
+Checking the default row names of the data set 
+
+```{r College3}
+head(rownames(College),10)
+```
+
+Changing the row names from default number to university names i,e 1st column in the data set 
+
+```{r College4}
+rownames(College)<-College[,1]
+```
+
+Updating the data set using **fix()** command 
+
+```{r College5}
+fix(College)
+```
+
+Checking again data set using **head** for row names 
+
+```{r College6}
+head(College)
+```
+
+Duplicate feature "X" which contains again universities names has to eliminate 
+
+```{r College7}
+College<-College[,-1]
+fix(College)
+```
+
+
+### (c)
+
+##### (i)Use the summary() function to produce a numerical summary of the variables in the data set. 
+
+**Answer**
+
+Command **Summary** gives numerical snapshot of the data set against each feature like mean,mode,max,min,etc.,.
+
+```{r College8}
+summary(College)
+```
+
+##### (ii)Use the **pairs()** function to produce a scatterplot matrix of the ﬁrst ten columns or variables of the data. Recall that you can reference the ﬁrst ten columns of a matrix A using A[,1:10].
+
+**Answer**
+
+```{r College9}
+pairs(College[,1:10])
+```
+
+##### (iii)Use the **plot()** function to produce side-by-side boxplots of Outstate versus Private.
+
+**Answer**
+
+```{r College10}
+boxplot(College$Outstate~College$Private,ylab = "Outstate",xlab = "Private")
+title("Outstate vs Private")
+```
+
+##### (iv)Create a new qualitative variable, called Elite, bybinning the Top10perc variable. We are going to divide universities into two groups based on whether or not the proportion of students coming from the top 10% of their high school classes exceeds 50%.
+
+**Answer**
+
+creating the new vector with name **Elite** with same length as features in College data set.
+
+```{r College11}
+Elite<-rep("No",length(College$Private))
+```
+
+Capturing proportion of students coming from the top 10% of their high school classes exceeds 50% into elite  
+
+```{r College12}
+Elite[College$Top10perc >50]=" Yes"
+```
+
+Checking the data type of the Elite vector
+
+```{r College13}
+typeof(Elite)
+```
+
+Changing character data type to factor.
+
+```{r College14}
+Elite<-as.factor(Elite)
+```
+
+Joining the  ELite vector in College data set.
+
+```{r College15}
+College<-data.frame(Elite,College)
+```
+
+Using command  **Summary** to see how many elite universities there are.
+
+```{r College16}
+summary(College)
+```
+
+Generating boxplots of Outstate versus Elite
+
+```{r College17}
+boxplot(College$Outstate~College$Elite,ylab = "Outstate",xlab = "Elite")
+title("Outstate vs Elite")
+```
+
+##### (v)Use the hist() function to produce some histograms with differing numbers of bins for a few of the quantitative variables.You may find the command par(mfrow=c(2,2)) useful:it will divide the print window into four regions so that four plots can be made simultaneously. Modifying the arguments to this function will divide the screen in other ways.
+
+**Answer**
+
+```{r College18}
+par(mfrow= c(2,2))
+hist(College$Apps)
+hist(College$Accept)
+hist(College$Enroll)
+hist(College$Top10perc)
+hist(College$Top25perc)
+hist(College$F.Undergrad)
+hist(College$Outstate)
+hist(College$Room.Board)
+hist(College$Books)
+```
+
+##### (vi)Continue exploring the data, and provide a brief summary of what you discover.
+
+**Answer**
+
+```{r College19}
+library(ggplot2)
+collegeplot1=function(x){
+  h=x
+ggplot(College, aes(log(h), fill = Private))+geom_density()+ggtitle(paste(names(h)))
+  
+}
+par(mfrow= c(2,2))
+collegeplot1(College$Accept)
+collegeplot1(College$Top10perc)
+collegeplot1(College$Top25perc)
+collegeplot1(College$Apps)
+
+```
+
+EDA Insight 1
+
+Private college accept more students from top 10 percent in their high school acedemics.
+
+```{r College20}
+
+collegeplot1=function(x){
+  h=x
+ggplot(College, aes(log(h), fill = Private))+geom_density()+ggtitle(paste(names(h)))
+  
+}
+par(mfrow= c(2,2))
+collegeplot1(College$Accept)
+collegeplot1(College$Top10perc)
+collegeplot1(College$Top25perc)
+collegeplot1(College$Apps)
+
+```
+
+
+EDA Insight 2
+
+Private college accept more students from top 10 percent in their high school acedemics.
+public school students spends more on Books,Expend,Personal but not on room&Boarding
+
+```{r College21}
+
+collegeplot2=function(x){
+  h=x
+ggplot(College, aes(log(h), fill = Private))+geom_density()+ggtitle(paste(names(h)))
+  
+}
+par(mfrow= c(2,2))
+collegeplot2(College$Books)
+collegeplot2(College$Expend)
+collegeplot2(College$Personal)
+collegeplot2(College$Room.Board )
+
+```

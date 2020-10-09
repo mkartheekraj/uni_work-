@@ -1,0 +1,325 @@
+---
+title: "Chapter 4 - Logistic Regression"
+author: "Kartheek Raj"
+date: "11/18/2019"
+output:
+  html_document: default
+  pdf_document: default
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Required packages : sigmoid,ISLR,caret,devtools and ggplot2
+
+
+#Classfication 
+
+Classiﬁcation problems occur often, perhaps even more so than regression problems. Some examples include:
+
+1. A person arrives at the emergency room with a set of symptoms that could possibly be attributed to one of three medical conditions. Which of the three conditions does the individual have?
+2. An online banking service must be able to determine whether or not a transaction being performed on the site is fraudulent, on the basis of the user’s IP address, past transaction history, and so forth.
+3. On the basis of DNA sequence data for a number of patients with and without a given disease, a biologist would like to ﬁgure out which DNA mutations are deleterious (disease-causing) and which are not.
+
+# Linear regression equation
+$$
+y=mx+c
+$$
+y  Output range is
+$$
+Range(y)=(-\infty~~to~+\infty)
+$$
+Classfication outputs are Dicsrete,Categorical,and Binary.
+
+Logi y desired output range from (0 to 1)
+
+Q:Why falls unders range(0 to 1)?
+
+A:logistic regression models the probability that y belongs to a par-
+ticular category.
+
+we will rewrite the equation 
+$$
+ y=\beta_0+\beta_1x
+$$
+To keep range of y in (0 to 1) 
+
+we apply sigmoid function 
+
+$$
+\sigma(k) =  \frac{1}{1 + e^{-k}}
+
+$$
+Logistic equation looks like 
+$$
+y=\frac{1}{1 + e^{-(\beta_0+\beta_1x)}}
+$$
+Lets test the sigmoid funtion with extreme values 
+
+$$
+\\when ~~ (\beta_0+\beta_1x)=0
+
+\\ y=\frac{1}{1 + e^{-(0)}}=1/2
+
+
+$$
+$$
+when ~~ (\beta_0+\beta_1x)= -(\infty)
+\\ y=\frac{1}{1 + e^{-(-(\infty))}}=0
+$$
+$$
+when ~~ (\beta_0+\beta_1x)= (\infty)
+\\ y=\frac{1}{1 + e^{-(\infty)}}=1
+$$
+Sigmoid graphical representation
+```{r,include=FALSE}
+
+library(sigmoid)
+x <- seq(-6, 6, length.out = 101)
+y1 <- sigmoid(x)
+y2 <- sigmoid(x)
+plot(x, y1, type = "l", col = "darkgreen", lwd=4,
+        xlab = "", ylab = "", main = "Sigmoid Function(s)")+
+abline(v=0, col="blue",lty=2)+
+abline(h=0.5,col="red",lty=2)
+```
+ #Why Not Linear Regression?
+ 
+1.Suppose that we are trying to predict the medical condition of a patient in the emergency room on the basis of her symptoms. In this simpliﬁed example, there are three possible diagnoses: **stroke**, **drug overdose**, and **epileptic seizure**. We could consider encoding these values as a quantitative response variable, **Y** , as follows:
+$$
+\\Y=\begin{cases}{1~~if~~stroke;\\2~~if~~drug~~ over~~dose;\\3~~if~~epileptic ~~seizure.}\end{cases}
+$$
+     
+Using this coding, least squares could be used to ﬁt a linear regressionmodel to predict **Y** on the basis of a set of predictors **X1,...,Xp**. Unfortunately, this coding implies an ordering on the outcomes, putting **drug overdose** in between **stroke** and **epileptic seizure**, and insisting that the diﬀerence between **stroke** and **drug overdose** is the same as the diﬀerence between **drug overdose** and **epileptic seizure**.Unfortunately, in general there is no natural way to convert a qualitative response variable with more than two levels into a quantitative response that is ready for linear regression. 
+
+##binary
+
+2.For a **binary** (two level) qualitative response, the situation is better. For
+binary instance, perhaps there are only two possibilities for the patient’s medical condition: **stroke** and **drug overdose**. 
+$$
+\\y=\begin{cases}{\\0~~if~~stroke;\\1~~if~~drug~~over~~dose.}\end{cases}
+$$
+We could then ﬁt a linear regression to this binary response, and predict **drug overdose** if $$\hat Y>0.5$$ and **stroke** otherwise. In the binary case it is not hard to show that even if we ﬂip the above coding, linear regression will produce the same ﬁnal predictions.However, if we use linear regression, some of our estimates might be outside the [0,1] interval (see Figure 4.2), making them hard to interpret as probabilities!
+
+
+$$
+\\y=\frac{1}{1 + e^{-(\beta_0+\beta_1x)}}
+$$
+
+
+
+Interchanging the terms from LHS to RHS
+
+$$
+\\1 + e^-(\beta_0+\beta_1x)=\frac{1}{y}
+$$
+Subtracting 1 one from both sides
+$$
+\\e^-(\beta_0+\beta_1x)=\frac{1-y}{y}
+$$
+Applying log on both sides 
+$$
+\\log(e^-(\beta_0+\beta_1x))=\log(\frac{1-y}{y})
+$$
+
+
+$$
+\\-(\beta_0+\beta_1(x))~~loge^e=\log(\frac{1-y}{y})
+$$
+Final equation as loge^e is equals to 1
+$$
+\beta_0+\beta_1x=\log(\frac{y}{1-y})
+$$
+v dwi v
+
+
+$$
+log(\frac{y}{1-y})~~ is~~Log(Odds~~Ratio)
+$$
+
+
+```{r,include=FALSE}
+
+
+library(ISLR)
+library(tibble)
+data("Default")
+as_tibble(Default)
+summary(Default)
+```
+
+# Data
+
+
+```{r}
+head(Default)
+```
+
+# box plot
+
+```{r}
+boxplot.default(Default$income,grouping(Default$default),xlab="Default",ylab="Income",staplewex = 0.5,boxwex = 0.5,outwex = 0.5,names = c("No","Yes"),col = c("lightblue","lightgreen"))
+
+boxplot.default(Default$balance,xlab="Default",ylab="Balance",grouping(Default$default),names = c("No","Yes"),col = c("lightblue","lightgreen"))
+
+```
+``` {r, fig.height=5, fig.width=7}
+
+library(devtools)
+
+library(ggplot2)
+ggplot(data=Default, aes(x=balance, y=income, shape=default,color=default)) +
+  geom_point()+
+  scale_shape_manual(values=c(1, 3))+
+  scale_color_manual(values=c('lightcoral','darkblue'))
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+We also repeat the test-train split from the previous chapter.
+
+```{r}
+set.seed(42)
+default_idx = sample(nrow(Default), 5000)
+default_trn = Default[default_idx, ]
+default_tst = Default[-default_idx, ]
+```
+
+
+## Linear Regression
+
+Before moving on to logistic regression, why not plain, old, linear regression?
+
+```{r}
+default_trn_lm = default_trn
+default_tst_lm = default_tst
+```
+
+Since linear regression expects a numeric response variable, we coerce the response to be numeric. (Notice that we also shift the results, as we require `0` and `1`, not `1` and `2`.) Notice we have also copied the dataset so that we can return the original data with factors later.
+
+```{r Defualt}
+default_trn_lm$default = as.numeric(default_trn_lm$default) - 1
+default_tst_lm$default = as.numeric(default_tst_lm$default) - 1
+```
+
+```{r}
+model_lm = lm(default ~ balance, data = default_trn_lm)
+```
+
+Everything seems to be working, until we plot the results.
+
+```{r, fig.height=5, fig.width=7}
+plot(default ~ balance, data = default_trn_lm, 
+     col = "darkorange", pch = "|", ylim = c(-0.2, 1),
+     main = "Using Linear Regression for Classification")
+abline(h = 0.0, lty = 3)
+abline(h = 1.0, lty = 3)
+abline(h = 0.5, lty = 2)
+abline(model_lm, lwd = 3, col = "dodgerblue")
+```
+
+Two issues arise. First, all of the predicted probabilities are below 0.5. That means, we would classify every observation as a `"No"`. This is certainly possible, but not what we would expect.
+
+```{r}
+all(predict(model_lm) < 0.5)
+```
+
+The next, and bigger issue, is predicted probabilities less than 0.
+
+```{r}
+any(predict(model_lm) < 0)
+```
+
+# logistic regression with glm()
+
+```{r}
+model_glm = glm(default ~ balance, data = default_trn, family = "binomial")
+```
+
+Fitting this model looks very similar to fitting a simple linear regression. Instead of `lm()` we use `glm()`. The only other difference is the use of `family = "binomial"` which indicates that we have a two-class categorical response. Using `glm()` with `family = "gaussian"` would perform the usual linear regression.
+
+First, we can obtain the fitted coefficients the same way we did with linear regression.
+
+```{r}
+coef(model_glm)
+```
+making pred
+
+
+The next thing we should understand is how the `predict()` function works with `glm()`. So, let's look at some predictions.
+
+```{r}
+head(predict(model_glm))
+```
+
+```{r}
+head(predict(model_glm, type = "response"))
+```
+
+Note that these are probabilities, **not** classifications. To obtain classifications, we will need to compare to the correct cutoff value with an `ifelse()` statement.
+
+```{r}
+model_glm_pred = ifelse(predict(model_glm, type = "link") > 0, "Yes", "No")
+# model_glm_pred = ifelse(predict(model_glm, type = "response") > 0.5, "Yes", "No")
+```
+
+
+Once we have classifications, we can calculate metrics such as the trainging classification error rate.
+
+```{r}
+calc_class_err = function(actual, predicted) {
+  mean(actual != predicted)
+}
+```
+
+```{r}
+calc_class_err(actual = default_trn$default, predicted = model_glm_pred)
+```
+
+As we saw previously, the `table()` and `confusionMatrix()` functions can be used to quickly obtain many more metrics.
+
+```{r, message = FALSE, warning = FALSE}
+train_tab = table(predicted = model_glm_pred, actual = default_trn$default)
+
+library(caret)
+
+train_con_mat = confusionMatrix(train_tab, positive = "Yes")
+c(train_con_mat$overall["Accuracy"], 
+  train_con_mat$byClass["Sensitivity"], 
+  train_con_mat$byClass["Specificity"])
+```
+
+We could also write a custom function for the error for use with trained logist regression models.
+
+```{r}
+get_logistic_error = function(mod, data, res = "y", pos = 1, neg = 0, cut = 0.5) {
+  probs = predict(mod, newdata = data, type = "response")
+  preds = ifelse(probs > cut, pos, neg)
+  calc_class_err(actual = data[, res], predicted = preds)
+}
+```
+
+This function will be useful later when calculating train and test errors for several models at the same time.
+
+```{r}
+get_logistic_error(model_glm, data = default_trn, 
+                   res = "default", pos = "Yes", neg = "No", cut = 0.5)
+```
+
+To see how much better logistic regression is for this task, we create the same plot we used for linear regression.
+
+```{r, fig.height=5, fig.width=7}
+plot(default ~ balance, data = default_trn_lm, 
+     col = "darkorange", pch = "|", ylim = c(-0.2, 1),
+     main = "Using Logistic Regression for Classification")
+abline(h = 0, lty = 3)
+abline(h = 1, lty = 3)
+abline(h = 0.5, lty = 2)
+curve(predict(model_glm, data.frame(balance = x), type = "response"), 
+      add = TRUE, lwd = 3, col = "dodgerblue")
+abline(v = -coef(model_glm)[1] / coef(model_glm)[2], lwd = 2)
+```
+
+![Caption](capture.png)  

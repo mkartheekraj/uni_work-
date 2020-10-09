@@ -1,0 +1,108 @@
+---
+title: "Chapter 8 Tree Based Methods - Problems 7"
+author: "Kartheek Raj"
+date: "12/23/2019"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 7. In the lab, we applied random forests to the Boston data using mtry=6 and using ntree=25 and ntree=500. Create a plot displaying the test error resulting from random forests on this data set for a more comprehensive range of values for mtry and ntree. You can model your plot after Figure 8.10. Describe the results obtained.
+
+Required packages : MASS,tree,randomForest and ISLR.
+
+Answer
+
+Boston data pulling from MASS package and data snapshots.
+
+```{r Boston data}
+
+require(MASS)
+require(tree)
+require(ISLR)
+require(randomForest)
+library(MASS)
+library(tree)
+library(ISLR)
+library(randomForest)
+
+
+
+boston<-data.frame(Boston)
+head(boston)
+str(boston)
+summary(boston)
+```
+Test and train data splits 
+
+```{r Boston test & train dara split}
+set.seed(1)
+sd<-sample(1:nrow(boston), round(nrow(boston)/2))
+train.x<-boston[sd,-14]
+test.x<-boston[-sd,-14]
+train.y<-boston[sd,14]
+test.y<-boston[-sd,14]
+
+```
+
+Building Randomforest Models with more **mtry** and **ntree**.
+
+```{r Random forest models with Mtry}
+
+mtry1<-randomForest(train.x,train.y,test.x,test.y,mtry = round(ncol(boston)-1),ntree = 500)
+mtry2<-randomForest(train.x,train.y,test.x,test.y,mtry = round(ncol(boston)/2),ntree = 500)
+mtry3<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 500)
+mtry4<-randomForest(train.x,train.y,test.x,test.y,mtry = round(ncol(boston)/6),ntree = 500)
+
+```
+
+Plotting the test errors above generate models.
+
+```{r plot results}
+
+par(mfrow=c(1,1),bg="lightyellow")
+plot(1:500,mtry1$test$mse,col="darkorange",type = "l",lwd=2,main="Test MSE vs Number of trees ",ylim = c(15,60),xlab = "No.of Trees",ylab = "Test MSE")
+lines(1:500,mtry2$test$mse,col="darkgreen",type = "l",lwd=2)
+lines(1:500,mtry3$test$mse,col="darkblue",type = "l",lwd=2)
+lines(1:500,mtry4$test$mse,col="darkred",type = "l",lwd=2)
+
+legend("topright",c("m=p","m=p/2","m=sqrt(p)","m=p/6"),col=c("darkorange","darkgreen","darkblue","darkred"),cex = 1,lty = 1,bty = "o")
+
+```
+
+Insight 1 : All models droped Test MSE around the similar number of tress.M=sqrt(p) model yiels lowest MSE
+
+
+```{r Random forest models with ntree}
+
+ntree1<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 100)
+ntree2<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 200)
+ntree3<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 300)
+ntree4<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 400)
+ntree5<-randomForest(train.x,train.y,test.x,test.y,mtry = round(sqrt(ncol(boston))),ntree = 20)
+
+```
+
+
+Plotting the test errors above generate models with  m=sqrt(P)
+
+```{r plot results1}
+
+par(mfrow=c(1,1),bg="lightyellow")
+plot(1:400,ntree4$test$mse,col="orange",type = "l",lwd=2,main="Test MSE vs Number of trees with m=Sqrt(p)",ylim = c(15,50),xlab = "No.of Trees",ylab = "Test MSE")
+lines(1:300,ntree3$test$mse,col="green",type = "l",lwd=2)
+lines(1:200,ntree2$test$mse,col="blue",type = "l",lwd=2)
+lines(1:100,ntree1$test$mse,col="red",type = "l",lwd=2)
+lines(1:20,ntree5$test$mse,col="pink",type = "l",lwd=2)
+
+legend("topright",c("ntree = 400","ntree = 300","ntree = 200","ntree = 100","ntree=20"),col=c("orange","green","blue","red","pink"),cex = 1,lty = 1,bty = "o")
+
+```
+
+Insight2 : ntree=300 records lowest Test MSE then others. However,ntree=20 records proxmity to othe rest of the trees.After developing 9 models expermenting with no of trees and varaibles i,e m narrowed to model yields lowest MSE is m=sqrt(p) and 300 trees.
+

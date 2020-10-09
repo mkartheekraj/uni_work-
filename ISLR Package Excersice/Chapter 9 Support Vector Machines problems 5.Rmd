@@ -1,0 +1,151 @@
+---
+title: "Chapter 9 Support Vector Machines problems 5"
+author: "kartheek raj mulasa"
+date: "12/28/2019"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 5 We have seen that we can ﬁt an SVM with a non-linear kernel in order to perform classiﬁcation using a non-linear decision boundary. We will now see that we can also obtain a non-linear decision boundary by performing logistic regression using non-linear transformations of the features.
+
+### (a) Generate a data set with n = 500 and p = 2, such that the observations belong to two classes with a quadratic decision boundary between them. For instance, you can do this as follows:
+
+Answer
+
+Data generated as given in the question.
+
+```{r data given}
+
+set.seed(5)
+
+X1=runif (500) -0.5
+X2=runif (500) -0.5 
+Y=1*(X1^2-X2^2 > 0)
+Y<-as.factor(Y)
+
+head(Y)
+
+```
+
+### (b) Plot the observations, colored according to their class labels. Your plot should display X1 on the x-axis, and X2 on the yaxis. 
+
+Answer
+
+Plotting the data points as mentioned in the question.
+
+```{r plot x1 and x2}
+
+par(mfrow=c(1,1),bg="lightyellow")
+
+plot(X1[Y==0],X2[Y==0],xlab = "X1",ylab = "X2",col="#50312F",cex=1,pch=16,type="p")
+points(X1[Y!=0],X2[Y!=0],col="#CB0000",cex=1,pch=16)
+
+
+
+```
+
+
+### (c) Fit a logistic regression model to the data, using X1 and X2 as predictors. 
+
+Answer 
+
+Building the logi model to above data .
+
+```{r logi}
+
+logi<-glm(Y~X1+X2,family = "binomial")
+
+summary(logi)
+
+
+```
+
+
+###  (d) Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be linear. 
+
+Answer
+
+```{r predicttrain1}
+
+
+par(mfrow=c(1,1),bg="lightyellow")
+
+dat<-data.frame(X1,X2,Y)
+
+logid<-glm(Y ~ ., data = dat, family = 'binomial')
+
+lpm<-predict(logid,dat$Y,type="response")
+
+lp<-ifelse(lpm>0.50,1,0)
+
+plot(dat$X1, dat$X2, col = lp+ 2,cex=1,pch=16)
+   
+
+```
+
+### (e) Now ﬁt a logistic regression model to the data using non-linear functions of X1 and X2 as predictors (e.g. X2 1, X1×X2, log(X2),and so forth).
+
+Answer
+
+```{r polylogi}
+
+logip<-glm(Y~poly(X1,2)+poly(X2,2), data = dat, family = 'binomial')
+
+
+summary(logip)
+
+
+```
+
+### (f) Apply this model to the training data in order to obtain a predicted class label for each training observation. Plot the observations, colored according to the predicted class labels. The decision boundary should be obviously non-linear. If it is not, then repeat (a)-(e) until you come up with an example in which the predicted class labels are obviously non-linear. 
+
+Answer
+
+```{r lopi poly predictions}
+
+par(mfrow=c(1,1),bg="lightyellow")
+
+lpm1<-predict(logip,dat$Y,type="response")
+
+lp1<-ifelse(lpm1>0.50,1,0)
+
+plot(dat$X1, dat$X2, col = lp1 + 5,cex=1,pch=16)
+
+```
+
+### (g)Fit a support vector classiﬁer to the data with X1 and X2 as predictors. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+```{r svm1}
+require(e1071)
+library(e1071)
+
+svm_linear<-svm(Y~.,data = dat, kernel="linear",cost=1)
+
+plot(svm_linear,dat,col=c("green","orange"))
+
+```
+
+
+### (h) Fit a SVM using a non-linear kernel to the data. Obtain a class prediction for each training observation. Plot the observations, colored according to the predicted class labels.
+
+```{r svmr2}
+
+svm_radial<-svm(Y~.,data = dat,kernel="radial",gamma=1)
+
+plot(svm_radial,dat,col=c("green","orange"))
+
+
+```
+
+
+### (i) Comment on your results.
+
+
+Logistic regression with polynomial predictors and svm radial yields better results juxtapose with any linear model.
+

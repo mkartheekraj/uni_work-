@@ -1,0 +1,55 @@
+---
+title: "Chapter 10 Problems 7"
+author: "Kartheek Raj"
+date: "12/26/2019"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 7. In the chapter, we mentioned the use of correlation-based distance and Euclidean distance as dissimilarity measures for hierarchical clustering. It turns out that these two measures are almost equivalent: if each observation has been centered to have mean zero and standard deviation one, and if we let rij denote the correlation between the ith and jth observations, then the quantity 1−rij is proportional to the squared Euclidean distance between the ith and jth observations. On the USArrests data, show that this proportionality holds. 
+
+Required packages : ISLR
+
+Answer
+
+Data pulling from ISLR Library 
+```{r USArrests}
+require(ISLR)
+library(ISLR)
+attach(USArrests)
+```
+
+Proportionality test Euclidean distance vs Correlation distance as mentioned in the question.
+```{r prop holds}
+
+phtest<-function(x){
+  sx<-scale(x)
+  distdat<-dist(sx)
+  sqrdistdat<-(distdat)^2
+  tsx<-t(sx)
+  cor11<-cor(tsx)
+  cordata<-as.dist(1-cor11)
+  pro<-(sqrdistdat/cordata)
+  print(summary(pro))
+  par(mfrow=c(1,2),bg="lightyellow")
+  plot(pro)
+  plot(pro,ylim = c(0,200))
+  summary(pro)
+  abline(h=3,col="red",lty="dashed")
+  abline(h=14,col="green",lty="dashed")
+}
+paste0(phtest(USArrests))
+paste0(phtest(USArrests[1:20,]))
+paste0(phtest(USArrests[1:30,]))
+
+```
+
+Insight 1 : As we plotted whole and samples its followed the pattern most of theobervation  falls under green and blue dotted lines with some  noise showing evidence proportionality holds.
+
+

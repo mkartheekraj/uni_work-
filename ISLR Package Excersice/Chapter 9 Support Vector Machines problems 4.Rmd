@@ -1,0 +1,105 @@
+---
+title: "Chapter 9 Support Vector Machines problems 4"
+author: "Kartheek Raj"
+date: "12/28/2019"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 4. Generate a simulated two-class data set with 100 observations and two features in which there is a visible but non-linear separation between the two classes. Show that in this setting, a support vector machine with a polynomial kernel (with degree greater than 1) or a radial kernel will outperform a support vector classiﬁer on the training data. Which technique performs best on the test data? Make plots and report training and test error rates in order to back up your assertions.
+
+Answer
+Required Packages: e1071
+
+Generating the 100 observations and plotting those data points 
+
+```{r 100 data}
+set.seed(12)
+par(mfrow=c(1,1),bg="lightyellow")
+x<-matrix(rnorm (100*2), ncol=2)
+length(x)
+y<-c(rep(-1,50), rep(1,50))
+x[y==1,]<-x[y==1,] + 1
+plot(x, col=c("darkorange","darkgreen"),type="p",cex=1.5,pch = 16)
+```
+
+train and test data split for support vector classifiers with various types
+```{r train/test}
+
+dat<-data.frame(x=x, y=as.factor(y))
+colnames(dat)<-c("x1","x2","y")
+sd<-sample(nrow(dat),0.60*nrow(dat),replace = F)
+train<-dat[sd,]
+test<-dat[-sd,]
+
+
+```
+
+
+Applying svm() to train data to build various svm classifiers and summaries of those
+```{r svmtypes} 
+
+library(e1071)
+svmfit.poly<-svm(y~., data=train , kernel ="polynomial", cost=10, scale=F,degree = 2)
+svmfit.lin<-svm(y~., data=train , kernel ="linear", cost=10, scale=F)
+svmfit.rad<-svm(y~., data=train , kernel ="radial", cost=10, scale=F)
+summary(svmfit.poly)
+summary(svmfit.lin)
+summary(svmfit.rad)
+
+```
+
+
+Plotting svm classifiers previously build.
+
+```{r svm plots on train} 
+par(mfrow=c(1,1),bg="lightyellow")
+library(e1071)
+plot(svmfit.lin,data=train,col=c("pink","lightcyan"),cex=1.5)
+plot(svmfit.poly,data=train,col=c("magenta","lightgreen"),cex=1.5)
+plot(svmfit.rad,data=train,col=c("dodgerblue","lightcoral"),cex=1.5)
+
+```
+
+Predicting on the test data using previously build svm classifiers 
+
+```{r predictions,testdata} 
+
+pre.poly<-predict(svmfit.poly,test)
+pre.lin<-predict(svmfit.lin,test)
+pre.rad<-predict(svmfit.rad,test)
+
+```
+
+Test error rate of SVM Classifiers
+```{r test error rate}
+paste0("Polynomial SVM test error rate is ",mean(pre.poly!=test$y))
+paste0("Linear SVM test error rate is ",mean(pre.lin!=test$y))  
+paste0("Radial SVM test error rate is ",mean(pre.rad!=test$y))  
+
+```
+
+Train error rate of svm classifiers, model trained on the train data and predict on the same.
+```{r train error rates}
+
+pre.polyt<-predict(svmfit.poly,train)
+pre.lint<-predict(svmfit.lin,train)
+pre.radt<-predict(svmfit.rad,train)
+
+paste0("Polynomial SVM train error rate is ",mean(pre.polyt!=train$y))
+paste0("Linear SVM train error rate is ",mean(pre.lint!=train$y))  
+paste0("Radial SVM train error rate is ",mean(pre.radt!=train$y))
+
+
+
+```
+
+Insight : Radial SVM Classifiers yields better predictions. Linear models yields close to radial classifiers.
+
+

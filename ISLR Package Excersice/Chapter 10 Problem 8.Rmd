@@ -1,0 +1,62 @@
+---
+title: "Chapter 10 Problem 8"
+author: "kartheek raj mulasa"
+date: "1/16/2020"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## 8. In Section 10.2.3, a formula for calculating PVE was given in Equation 10.8. We also saw that the PVE can be obtained using the sdev output of the prcomp() function. On the USArrests data, calculate PVE in two ways: hese two approaches should give the same results. 
+
+### (a) Using the sdev output of the prcomp() function, as was done in Section 10.2.3.
+
+
+Data pulling from ISLR Library 
+```{r USArrests}
+require(ISLR)
+library(ISLR)
+attach(USArrests)
+```
+
+
+
+```{r sdev}
+
+usapca<-prcomp(USArrests,scale. = T)
+usapv<-usapca$sdev^2
+pve<-usapv/sum(usapv)
+
+pve
+
+
+```
+
+### (b) By applying Equation 10.8 directly. That is, use the prcomp() function to compute the principal component loadings. Then, use those loadings in Equation 10.8 to obtain the PVE.
+
+```{r pve manual}
+
+pvem<-function(x){
+  
+  sx<-scale(x)
+  pcaa<-prcomp(sx,scale. = T)
+  loadings<-pcaa$rotation
+  totalvariance<-apply(as.matrix(sx^2),2,FUN = sum)
+  explainedvariance<-apply(as.matrix((sx %*% loadings)^2),2,FUN = sum)
+  pve<-explainedvariance/sum(totalvariance)
+  pve
+  
+}
+
+pvem(USArrests)
+
+```
+
+Insight 2: Applying both methods got the same values as estimated.

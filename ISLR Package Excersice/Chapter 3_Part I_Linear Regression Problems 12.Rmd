@@ -1,0 +1,75 @@
+---
+title: "Chapter 3 Part I Linear Regression (Problem  12)"
+author: "kartheek raj mulasa"
+date: "12/21/2019"
+output:
+  pdf_document: 
+   extra_dependencies:
+      hyperref: ["unicode=true", "breaklinks=true","bbm", "threeparttable"]
+      lmodern: null
+  word_document: default
+  html_document: default
+  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+```
+
+## Problem 12: This problem involves simple linear regression without an intercept.
+
+### (a) Recall that the coeﬃcient estimate ˆ β for the linear regression of Y onto X without an intercept is given by (3.38). Under what circumstance is the coeﬃcient estimate for the regression of X onto Y the same as the coeﬃcient estimate for the regression of Y onto X? 
+
+Answer
+
+In generic linear equation y=mx+c,C=0 as intercept is zero then equation y=mx viceversa x onto y gives equation x=my both linear equations have the same slope occurs when y=x.
+
+Given the linear regression equation in (3.38) we can say denmoniator term must be equal as numerator same for both events \beta=\sum_{i}_x_{i}y_{i}
+
+$$ 
+\sum_{{i^`}=1}^n x^2_{i^`} = \sum_{{i^`}=1}^n y^2_{i^`}
+$$
+
+### (b) Generate an example in R with n = 100 observations in which the coeﬃcient estimate for the regression of X onto Y is diﬀerent from the coeﬃcient estimate for the regression of Y onto X.
+
+Answer 
+
+creating the obersvations
+```{r 100obesrvations}
+set.seed(1)
+x<-sample(1:1000,100,replace = T)
+y<-x*2+sample(1:1000,100,replace = T)
+length(x)
+length(y)
+```
+Building linear models x onto y and y onto x.
+```{r linearmodel1}
+slm<-lm(y~x+0)
+slm1<-lm(x~y+0)
+summary(slm)
+summary(slm1)
+```
+Generated linear models yields different coefficents
+
+### (c) Generate an example in R with n = 100 observations in which the coeﬃcient estimate for the regression of X onto Y is the same as the coeﬃcient estimate for the regression of Y onto X. 
+
+Answer 
+
+Generating the 100 obervations
+```{r 100obervations 1}
+
+x<-100:200
+x<-x^2
+y<-200:100
+y<-y^2
+```
+Building linear models x onto y and y onto x.
+```{r linearmodels 2}
+slm2<-lm(x~y+0)
+slm3<-lm(y~x+0)
+summary(slm2)
+summary(slm3)
+```
+Both models yield same coefficent.

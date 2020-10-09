@@ -1,0 +1,76 @@
+---
+title: "Chapter 3 Part I Linear Regression (Problems_8)"
+author: "Kartheek Raj"
+date: "12/21/2019"
+output:
+  pdf_document: default
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 8: This question involves the use of simple linear regression on the Auto data set
+Required Packages :ISLR
+
+Answer
+
+Loading the **Auto** data from ISLR package
+```{r Auto}
+require(ISLR)
+library(ISLR)
+auto<-data.frame(Auto)
+head(auto)
+```
+### (a) Use the lm() function to perform a simple linear regression with mpg as the response and horsepower as the predictor. Use the summary() function to print the results. Comment on the output.
+
+Answer
+
+```{r Linearmodel}
+autolm<-lm(mpg~horsepower,data=auto)
+summary(autolm)
+```
+#### (i) Is there a relationship between the predictor and the response? 
+
+Answer: There is relationship between the predictor and the response as evidence poised to P-value.
+
+#### (ii) How strong is the relationship between the predictor and the response?
+
+Answer: Adjusted R-squared value is 0.60 means 60% can explain variance in **mpg** by **horsepower**.
+
+#### (iii) Is the relationship between the predictor and the response positive or negative? 
+
+Answer: Negative correlation indicated by horsepower coefficient is -0.157845 i.e m=negative slope.
+
+#### (iv) What is the predicted mpg associated with a horsepower of 98? What are the associated 95% conﬁdence and prediction intervals? 
+
+Answer
+
+```{r cofidenceintervals}
+predict(autolm,data.frame(horsepower=98),interval="confidence")
+
+```
+```{r predictions}
+predict(autolm,data.frame(horsepower=98),interval="prediction")
+
+```
+### (b) Plot the response and the predictor. Use the abline() function to display the least squares regression line.
+
+Answer
+
+```{r plotpredictions}
+plot(auto$horsepower,auto$mpg,main="Plot using adbline() display the least squares regression line",xlab="Horsepower",ylab = "mpg",col="darkorange")
+abline(autolm,col="darkblue")
+
+```
+### (c) Use the plot() function to produce diagnostic plots of the least squares regression fit. Comment on any problems you see with the fit.
+
+Answer
+
+```{r diagnosticsplot}
+plot(autolm,col="darkgreen")
+
+```
+

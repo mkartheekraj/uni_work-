@@ -1,0 +1,464 @@
+---
+title: "Chapter 4:Classification- problem 10"
+author: "Kartheek Raj"
+date: "12/22/2019"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 10. This question should be answered using the Weekly data set, which is part of the ISLR package. This data is similar in nature to the Smarket data from this chapter’s lab, except that it contains 1,089 weekly returns for 21 years, from the beginning of 1990 to the end of 2010.
+
+Packages required :ISLR,caret,class and MASS
+
+### (a) Produce some numerical and graphical summaries of the Weekly data. Do there appear to be any patterns? 
+
+Answer
+
+Weekly dataset pulling from ISLR pacakage 
+```{r smarket}
+require(ISLR)
+require(caret)
+require(MASS)
+require(class)
+library(ISLR)
+library(caret)
+library(MASS)
+library(class)
+weekly<-data.frame(Weekly)
+head(weekly)
+```
+Dataset numerical summary and garphical summary 
+```{r datasnapshot}
+pairs(weekly)
+summary(Weekly)
+head(weekly)
+print(names(weekly))
+```
+
+EDA insight 1: Volume vs year shown  relation i.e upward trend.
+
+```{r dataplots}
+dplot<-function(x){
+  h=x
+ 
+  boxplot(h~weekly$Direction,ylab=colnames(x),main="Lag vs DIrection")
+  abline(h=0,col="red",lty="dotdash")
+}
+dplot(weekly$Lag1)
+dplot(weekly$Lag2)
+dplot(weekly$Lag3)
+dplot(weekly$Lag4)
+dplot(weekly$Lag5)
+```
+
+EDA insight 2 : All lags up and down reflects similar data disturbition not the same to each other.
+
+
+### (b) Use the full data set to perform a logistic regression with Direction as the response and the ﬁve lag variables plus Volume as predictors. Use the summary function to print the results. Do any of the predictors appear to be statistically signiﬁcant? If so, which ones? 
+
+Answer
+
+Logi Model building all columns except **Today**.
+
+```{r logimodel}
+logi<-glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume,data = weekly,family = binomial)
+summary(logi)
+```
+
+Model Insight 1: Lag2 which is the highest signaficance predcitor of the model and  the rest of the predictors not much.
+
+### (c)  Compute the confusion matrix and overall fraction of correct predictions. Explain what the confusion matrix is telling you about the types of mistakes made by logistic regression. 
+
+Answer
+
+Generating the Confusion matrix.
+
+```{r confusionmatrix}
+
+logip<-predict(logi,newdata = weekly,type="response")
+
+logipc<-as.factor(ifelse(logip>0.5,"Up","Down"))
+confusionMatrix(weekly$Direction,logipc,mode = "prec_recall")
+
+```
+
+
+```{r plotcunfusionmatrixv,echo=FALSE}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX - (TRAIN = TEST)', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Up', cex=1.2)
+  rect(250, 430, 340, 370, col='#F7AD50')
+  text(295, 435, 'Down', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#F7AD50')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Up', cex=1.2, srt=90)
+  text(140, 335, 'Down', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+cm<-confusionMatrix(weekly$Direction,logipc,mode = "prec_recall")
+draw_confusion_matrix(cm)
+
+```
+
+### (d) Now ﬁt the logistic regression model using a training data period from 1990 to 2008, with Lag2 as the only predictor. Compute the confusion matrix and the overall fraction of correct predictions for the held out data (that is, the data from 2009 and 2010).
+
+Answer
+
+Test and train data split: Train dataset which include all rows before 2008 and after 2008 is test data  
+```{r train and test datasplit}
+train<-weekly[weekly$Year<=2008,]
+test<-weekly[weekly$Year>2008,]
+```
+
+Building the logi model **Lag2** as solo predictor onto Direction and test the data 
+
+```{r logimodel1 and confusionmatrix1}
+logi1<-glm(Direction~Lag2,data = train,family = binomial )
+logip1<-predict(logi1,newdata=test,type="response")
+logipc1<-as.factor(ifelse(logip1>0.5,"Up","Down"))
+confusionMatrix(logipc1,test$Direction,mode = "prec_recall")
+```
+ 
+
+```{r plotcunfusionmatrixv1,echo=FALSE}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX - LOGI', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Up', cex=1.2)
+  rect(250, 430, 340, 370, col='#97d03f')
+  text(295, 435, 'Down', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#97d03f')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Up', cex=1.2, srt=90)
+  text(140, 335, 'Down', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+cm1<-confusionMatrix(logipc1,test$Direction,mode = "prec_recall")
+draw_confusion_matrix(cm1)
+
+```
+
+Model Insight 2: Accuracy is 62% and No information rate is 0.5865.
+
+### (e) Repeat (d) using LDA. 
+
+Answer
+
+```{r lda and confusionmatrix1}
+ldad<-lda(Direction~Lag2,data = train)
+ldadp<-predict(ldad,newdata= test)
+confusionMatrix(ldadp$class,test$Direction,mode = "prec_recall")
+```
+
+```{r plotcunfusionmatrixv2,echo=FALSE}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX - LDA', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Up', cex=1.2)
+  rect(250, 430, 340, 370, col='#d03f97')
+  text(295, 435, 'Down', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#d03f97')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Up', cex=1.2, srt=90)
+  text(140, 335, 'Down', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+cm2<-confusionMatrix(ldadp$class,test$Direction,mode = "prec_recall")
+draw_confusion_matrix(cm2)
+
+```
+
+Model Insight 3 : LDQ model parameters same as logistic regression model.
+
+### (f) Repeat (d) using QDA.
+
+Answer
+
+```{r qda and confusionmatrix1}
+qdad<-qda(Direction~Lag2,data = train)
+qdadp<-predict(qdad,newdata= test)
+confusionMatrix(qdadp$class,test$Direction,mode = "prec_recall")
+```
+
+
+```{r plotcunfusionmatrixv3,echo=FALSE}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX - QDA', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Up', cex=1.2)
+  rect(250, 430, 340, 370, col='#d03f4e')
+  text(295, 435, 'Down', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#d03f4e')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Up', cex=1.2, srt=90)
+  text(140, 335, 'Down', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+cm3<-confusionMatrix(qdadp$class,test$Direction,mode = "prec_recall")
+draw_confusion_matrix(cm3)
+
+```
+
+### (g) Repeat (d) using KNN with K = 1. 
+
+Answer
+
+```{r knn and confusionmatrix1}
+
+knnp<-knn(as.matrix(train$Lag2),as.matrix(test$Lag2),train$Direction,k=1)
+confusionMatrix(knnp,test$Direction,mode = "prec_recall")
+```
+
+```{r plotcunfusionmatrixv4,echo=FALSE}
+
+draw_confusion_matrix <- function(cm) {
+
+  layout(matrix(c(1,1,2)))
+  par(mar=c(2,2,2,2))
+  plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
+  title('CONFUSION MATRIX - KNN', cex.main=2)
+
+  # create the matrix 
+  rect(150, 430, 240, 370, col='#3F97D0')
+  text(195, 435, 'Up', cex=1.2)
+  rect(250, 430, 340, 370, col='#fd6d0b')
+  text(295, 435, 'Down', cex=1.2)
+  text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
+  text(245, 450, 'Actual', cex=1.3, font=2)
+  rect(150, 305, 240, 365, col='#fd6d0b')
+  rect(250, 305, 340, 365, col='#3F97D0')
+  text(140, 400, 'Up', cex=1.2, srt=90)
+  text(140, 335, 'Down', cex=1.2, srt=90)
+
+  # add in the cm results 
+  res <- as.numeric(cm$table)
+  text(195, 400, res[1], cex=1.6, font=2, col='white')
+  text(195, 335, res[2], cex=1.6, font=2, col='white')
+  text(295, 400, res[3], cex=1.6, font=2, col='white')
+  text(295, 335, res[4], cex=1.6, font=2, col='white')
+
+  # add in the specifics 
+  plot(c(100, 0), c(100, 0), type = "n", xlab="", ylab="", main = "DETAILS", xaxt='n', yaxt='n')
+  text(10, 85, names(cm$byClass[1]), cex=1.2, font=2)
+  text(10, 70, round(as.numeric(cm$byClass[1]), 3), cex=1.2)
+  text(30, 85, names(cm$byClass[2]), cex=1.2, font=2)
+  text(30, 70, round(as.numeric(cm$byClass[2]), 3), cex=1.2)
+  text(50, 85, names(cm$byClass[5]), cex=1.2, font=2)
+  text(50, 70, round(as.numeric(cm$byClass[5]), 3), cex=1.2)
+  text(70, 85, names(cm$byClass[6]), cex=1.2, font=2)
+  text(70, 70, round(as.numeric(cm$byClass[6]), 3), cex=1.2)
+  text(90, 85, names(cm$byClass[7]), cex=1.2, font=2)
+  text(90, 70, round(as.numeric(cm$byClass[7]), 3), cex=1.2)
+
+  # add in the accuracy information 
+  text(30, 35, names(cm$overall[1]), cex=1.5, font=2)
+  text(30, 20, round(as.numeric(cm$overall[1]), 3), cex=1.4)
+  text(70, 35, names(cm$overall[2]), cex=1.5, font=2)
+  text(70, 20, round(as.numeric(cm$overall[2]), 3), cex=1.4)
+}  
+cm4<-confusionMatrix(knnp,test$Direction,mode = "prec_recall")
+draw_confusion_matrix(cm4)
+
+```
+
+### (h)  Which of these methods appears to provide the best results on this data? 
+
+Answer: logi and LDA model yoelds high accuracy but KNN model has highest F1 score amon all models.
+
+### (i)  Experiment with diﬀerent combinations of predictors, including possible transformations and interactions, for each of the methods. Report the variables, method, and associated confusion matrix that appears to provide the best results on the held out data. Note that you should also experiment with values for K in the KNN classiﬁer.
+
+Answer 
+
+Building models with polynomial transformations and combinations.
+
+```{r combinations}
+
+logi_comb<-glm(Direction ~ Lag1 + Lag2, family = binomial, data = train)
+lda_comb<-lda(Direction~Lag1+Lag2+Lag3,data = train)
+qda_comb<-qda(Direction~Lag2+Lag3,data = train)
+logi_trans<-glm(Direction ~ poly(Lag2,2), family = binomial, data = train)
+lda_trans<-lda(Direction~poly(Lag2,2),data = train)
+qda_trans<-qda(Direction~poly(Lag2,2),data = train)
+knn_comb<-knn(as.matrix(train$Lag1+train$Lag2),as.matrix(test$Lag1+test$Lag2),train$Direction,k=1)
+  
+```
+
+
+Generated predictions on previously generated models.
+
+```{r predictions 123}
+
+pred_logi_comb<-predict(logi_comb,newdata= test,type="response")
+pred_lda_comb<-predict(lda_comb,newdata= test)
+pred_qda_comb<-predict(qda_comb,newdata= test)
+pred_logi_trans<-predict(logi_trans,newdata= test,type="response")
+pred_lda_trans<-predict(lda_trans,newdata= test)
+pred_qda_trans<-predict(qda_trans,newdata= test)
+l_combo<-as.factor(ifelse(pred_logi_comb>0.5,"Up","Down"))
+l_trans<-as.factor(ifelse(pred_logi_trans>0.5,"Up","Down"))
+
+```
+
+
+Confusion matrix summaries all tranformation and combination models.
+
+```{r confusionmatrix111}
+
+confusionMatrix(l_combo,test$Direction,mode = "prec_recall")
+confusionMatrix(l_trans,test$Direction,mode = "prec_recall")
+confusionMatrix(pred_lda_comb$class,test$Direction,mode = "prec_recall")
+confusionMatrix(pred_qda_comb$class,test$Direction,mode = "prec_recall")
+confusionMatrix(pred_lda_trans$class,test$Direction,mode = "prec_recall")
+confusionMatrix(pred_qda_trans$class,test$Direction,mode = "prec_recall")
+confusionMatrix(knn_comb,test$Direction,mode = "prec_recall")
+
+
+```
+
+
+
+
+
